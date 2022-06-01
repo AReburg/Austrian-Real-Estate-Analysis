@@ -30,12 +30,11 @@ import random
 import logging
 import os
 #from nordvpn_switcher import initialize_VPN, rotate_VPN, terminate_VPN
-from time import time
 from collections import OrderedDict
 from datetime import datetime
+from bs4 import BeautifulSoup
 import sqlite3
 import requests
-from bs4 import BeautifulSoup
 import urllib
 import re
 
@@ -48,15 +47,15 @@ svg = """<svg class="createSvgIcon__SvgIcon-sc-1vebdtk-0 fKmYTO" height="1em" po
 
 bundesland = ['oberoesterreich']#, 'steiermark', 'salzburg', 'wien', 'vorarlberg', 'burgenland', 'niederoesterreich',
             #  'kaernten', 'tirol']
-wohnung = ['eigentumswohnung', 'mietwohnungen']
-end_page = 4
-rows_shown = 4
+wohnung = ['eigentumswohnung']#, 'mietwohnungen']
+start_page = 417
+end_page = 500
+rows_per_page = 4
 
 
 
 def remove_umlaut(string):
-    """ Removes umlauts from strings and replaces them with the letter+e convention
-    """
+    """ Removes umlauts from strings and replaces them with the letter+e convention """
     u = 'ü'.encode()
     U = 'Ü'.encode()
     a = 'ä'.encode()
@@ -93,53 +92,49 @@ def get_additional_apartment_details(soup, url):
         value.append(price)
     except:
         value.append(None)
-        pass
-    title.append('Preis')
+
+    title.append('price')
     title.append('scrape_date')
     now = datetime.now()
-    scrape_date = "{}.{}.{} {}:{}".format(now.day, now.month, now.year, now.hour, now.minute)
-    value.append(scrape_date)
+    value.append("{}.{}.{} {}:{}".format(now.day, now.month, now.year, now.hour, now.minute))
 
     title.append('Type')
-    if url.find('eigentumswohnung'):
+    if url.find('eigentumswohnung') >0:
         value.append('Eigentumswohnung')
-    elif url.find('mietwohnung'):
+    elif url.find('mietwohnungen') > 0:
         value.append('Mietwohnung')
 
     try:
-        makler = innerHTML(
-            soup.find('span', {'data-testid': 'price-information-freetext-attribute-value-0'})).decode("utf-8")
         title.append('Makler')
-        value.append(makler)
-    except AttributeError as error:
+        value.append(innerHTML(
+            soup.find('span', {'data-testid': 'price-information-freetext-attribute-value-0'})).decode("utf-8"))
+    except AttributeError as e :
+        value.append(None)
         pass
+
     try:
-        zusatz = innerHTML(
-            soup.find('span', {'data-testid': 'price-information-freetext-attribute-value-1'})).decode("utf-8")
         title.append('Zusatz')
-        value.append(zusatz)
-    except AttributeError as error:
+        value.append(innerHTML(
+            soup.find('span', {'data-testid': 'price-information-freetext-attribute-value-1'})).decode("utf-8"))
+    except AttributeError as e:
+        value.append(None)
         pass
 
     last_change = innerHTML(soup.find('span', {'data-testid': 'ad-detail-ad-edit-date-top'})).decode("utf-8")
-    change = re.findall(r'(\d{2}.\d{2}.\d{4})', last_change)
-    title.append('LetzteAenderung')
-    value.append(change[0])
+    title.append('last_change_date')
+    value.append(re.findall(r'(\d{2}.\d{2}.\d{4})', last_change)[0])
 
-    header_title = innerHTML(soup.find('h1', {'data-testid': 'ad-detail-header'})).decode("utf-8")
-    title.append('Header')
-    value.append(header_title)
+    title.append('title')
+    value.append(innerHTML(soup.find('h1', {'data-testid': 'ad-detail-header'})).decode("utf-8"))
 
     willhaben_code = innerHTML(soup.find('span', {'data-testid': 'ad-detail-ad-wh-code-top'})).decode("utf-8")
-    code = re.findall(r'(\d{9})', willhaben_code)[0]
-    title.append('WillhabenCode')
-    value.append(code)
+    title.append('code')
+    value.append(re.findall(r'(\d{9})', willhaben_code)[0])
     title.append('Url')
     value.append(url)
 
-    object_standort = innerHTML(soup.find('div', {'data-testid': 'object-location-address'})).decode("utf-8")
-    title.append('ObjektStandort')
-    value.append(object_standort)
+    title.append('location')
+    value.append(innerHTML(soup.find('div', {'data-testid': 'object-location-address'})).decode("utf-8"))
 
     return [title, value]
 
@@ -149,65 +144,49 @@ def get_apartment_details(url):
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     [title, value] = get_additional_apartment_details(soup, url)
-
     results = OrderedDict()
     results['columns'] = title
     results['values'] = value
     return results
-    """
-    debug = False
-    spans = soup.find_all('span', {'class': 'Text-sc-10o2fdq-0 bZUXUD'})
-    value_span = soup.find_all('div', {'data-testid': 'attribute-value'})
-    print(f"{len(spans)}, {len(value_span)}")
-    print(f"{spans}, \n{value_span}")
-    for i in spans:
-        # title.append(re.sub('[^A-Za-z0-9]+', '', innerHTML(i).decode("utf-8")))
-        without_umlaute = helpers.remove_umlaut(innerHTML(i).decode("utf-8"))
-        title.append(re.sub('[^A-Za-z0-9]+', '', without_umlaute))
 
-
-    for i in value_span:
-        if innerHTML(i).decode("utf-8") == svg:
-            value.append("True")
-        elif innerHTML(i).decode("utf-8").find(' m²')>0:
-            val = innerHTML(i).decode("utf-8").split(' m²')[0]
-            value.append(val)
-        else:
-            value.append(helpers.remove_umlaut(innerHTML(i).decode("utf-8")))
-
-    if debug:
-        try:
-            for idx,j in enumerate(title):
-                val = value[idx]
-                # print(f"{j}: {val}")
-        except IndexError as error:
-            pass
-        """
 
 def get_all_urls():
     """ Get all urls initially. Afterwards for each url the data is scraped."""
     apartment_links = []
     for land in bundesland:
         for wohnungs_typ in wohnung:
-            for i in range(1,end_page):
-                url = (f'https://www.willhaben.at/iad/immobilien/{wohnungs_typ}/{land}?rows={rows_shown}&page={i}')
-                # print(url)
+            final_page = False
+            for i in range(start_page,end_page):
+                if final_page: break
+                sleep(0.5)
+                url = (f'https://www.willhaben.at/iad/immobilien/{wohnungs_typ}/{land}?rows={rows_per_page}&page={i}')
                 response = requests.get(url, headers=headers)
                 soup = BeautifulSoup(response.text, 'html.parser')
+
+                """Find the last page without retail links """
+                for span in soup.find_all('span', {'class': 'Text-sc-10o2fdq-0 iEMlgJ'}):
+                    if innerHTML(span).decode("utf-8") == "Wir benachrichtigen dich bei <b>neuen Anzeigen</b> automatisch!":
+                        # print(innerHTML(span).decode("utf-8"))
+                        final_page = True
+                        break
+
                 for link in soup.find_all('a'):
+                    # print(link)
                     url2 = link.get('href')
-                    # print(url)
+                    # print(url2)
                     if url2 != "#" and url2 != None and url2.startswith((f"/iad/immobilien/d/{wohnungs_typ}/{land}")):
                         apartment_links.append("https://www.willhaben.at" + url2)
+                        # print(f"2: {url2}")
+
     return apartment_links
 
 
 def write_to_db(params):
-    print(f"col: {params['columns']}, {len(params['columns'])}")
-    print(f"val: {params['values']}, {len(params['values'])}")
+    # print(f"col: {params['columns']}, {len(params['columns'])}")
+    # print(f"val: {params['values']}, {len(params['values'])}")
     con = sqlite3.connect(os.path.join(dirname + '\db', real_estate_db))
     cur = con.cursor()
-    create_table = (f'''CREATE TABLE IF NOT EXISTS RealEstate (scrape_date DATE, WillhabenCode text)''')
+    create_table = (f'''CREATE TABLE IF NOT EXISTS RealEstate (scrape_date DATE, code text UNIQUE)''')
     cur.execute(create_table)
 
     columns = [i[1] for i in cur.execute('PRAGMA table_info(RealEstate)')]
@@ -218,23 +197,26 @@ def write_to_db(params):
             rows = list(cur.execute(f'SELECT {i} FROM RealEstate'))
             # print(f'{i}  {rows}')
             con.commit()
-    query = ''
-    for idx, i in enumerate(params['columns']):
-        if idx == len(params['columns'])-1:
-            query = query+ '?'
-        else:
-            query = query + '?, '
-    col = ''
-    for idx, i in enumerate(params['columns']):
-        if idx == len(params['columns']) - 1:
-            col = col + f'{i}'
-        else:
-            col = col + f'{i}, '
 
-    sqlite_insert_with_param = f"""INSERT OR IGNORE INTO RealEstate  ({col}) VALUES ({query});"""
+    query_sign = ''.join(['?' if i == len(params['columns'])-1 else '?, ' for i in range(len(params['columns']))])
+    cols = ''.join([i if i == params['columns'][-1] else i+', ' for i in params['columns']])
+
+
+    """ write to db only if:
+    1) the code is new
+    2) the code is the same and last_change is different
+    """
+
+    sqlite_insert_with_param1 = f"""INSERT OR IGNORE INTO RealEstate ({cols}) VALUES ({query_sign}) ON CONFLICT(code) DO UPDATE SET last_change_date=excluded.last_change_date"""
+    sqlite_insert_with_param2 = f"""INSERT OR UPDATE INTO RealEstate ({cols}) VALUES ({query_sign});"""
+    sqlite_insert_with_param3 = f"""INSERT INTO RealEstate  ({cols}) VALUES ({query_sign});"""
     data_tuple = tuple(params['values'])
-    # print(f"{sqlite_insert_with_param}")
-    # print(f"{data_tuple}")
-    cur.execute(sqlite_insert_with_param, data_tuple)
+    cur.execute(sqlite_insert_with_param1, data_tuple)
     con.commit()
     con.close()
+
+
+def export_to_csv(df):
+    # saving the dataframe
+    df.to_csv('file1.csv')
+    print("exported to csv.")

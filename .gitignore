@@ -9,3 +9,5 @@ Charts.py
 __pycache__/helpers.cpython-38.pyc
 vis_plotly.py
 vis_plotly.py
+db/real_estate.sqlite
+db/real_estate.sqlite
