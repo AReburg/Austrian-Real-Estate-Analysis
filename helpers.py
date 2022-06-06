@@ -1,58 +1,48 @@
 #-----------------------------------------------------------------------------------------------------------------------
-# Scrape willhaben real estate data
-#
-# pipreqs C:\Users\klara\Documents\GitHub\WillhabenScrape
-# pip3 freeze > requirements.txt  # Python3
-
-# Scraping Austrian real estate properties from Willhaben
-# Date: 06.03.2022
 # Links:
-## https://stackoverflow.com/questions/16248723/how-to-find-spans-with-a-specific-class-containing-specific-text-using-beautiful
-# https://stackoverflow.com/questions/8112922/beautifulsoup-innerhtml
-# https://www.regextester.com/99555
-# https://regex101.com/r/hByf5o/1
-# https://www.sqlite.org/lang_update.html
-# \b[0-9]{1,3}(,[0-9]{3})*(\.[0-9]+)?\b|\.[0-9]+\b
-# \b\d{1,3}(.\d{3})*(\.[0-9]+)?\b|\,[0-9]+\b
-# https://www.regextester.com/99555
 # https://www.reddit.com/r/learnpython/comments/tf3929/my_career_path_going_from_zero_experience_to_a_sr/
 # # url = "https://www.willhaben.at/iad/immobilien/eigentumswohnung/eigentumswohnung-angebote?&rows=5&areaId=601&parent_areaid=6"
 #     soupString = str(soup)
 #     #post_code = re.search('post_code":"(.*?)"', soupString)
 #     #price = re.search('price":"(.*?)"', soupString)
 #     #rooms = re.search('rooms":"(.*?)"', soupString)
-#     #print("This is apartment in " + post_code.group(1) + ", with " + rooms.group(1) + " rooms, price is " + price.group(1) + ".")
-#     # spans = soup.find_all('span', {'class' : 'Text-sc-10o2fdq-0 bZUXUD'})
-#     #
 #-----------------------------------------------------------------------------------------------------------------------
 from time import sleep
 import random
 import logging
 import os
-#from nordvpn_switcher import initialize_VPN, rotate_VPN, terminate_VPN
-from collections import OrderedDict
+from fake_useragent import UserAgent
 from datetime import datetime
 from bs4 import BeautifulSoup
+from collections import OrderedDict
 import sqlite3
 import requests
 import urllib
 import re
+import anonym
+import pandas as pd
 
 dirname = os.path.dirname(__file__)
 real_estate_db = 'real_estate.sqlite'
 area_postal_codes = 'area_codes.json'
-headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36"}
 svg = """<svg class="createSvgIcon__SvgIcon-sc-1vebdtk-0 fKmYTO" height="1em" pointer-events="none" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M21.71 5.29a1 1 0 0 0-1.42 0L9 16.58l-5.28-5.29a1 1 0 0 0-1.41 1.41l6 6a1 1 0 0 0 1.42 0l12-12a1 1 0 0 0-.02-1.41Z" fill="currentColor"></path></svg>"""
 
-bundesland = ['oberoesterreich']#, 'steiermark', 'salzburg', 'wien', 'vorarlberg', 'burgenland', 'niederoesterreich',
+bundesland = ['salzburg']#, 'steiermark']#, 'wien', 'vorarlberg']#, 'burgenland', 'niederoesterreich',
             #  'kaernten', 'tirol']
 wohnung = ['eigentumswohnung']#, 'mietwohnungen']
-start_page = 417
-end_page = 500
+random.shuffle(bundesland)
+random.shuffle(wohnung)
+
 rows_per_page = 4
+ua = UserAgent() # From here we generate a random user agent
+headers = {"User-Agent" : ua.random}
+prox = anonym.get_proxies()
+print(prox)
+page_start = 2
+page_end = 12
 
-
+counties = pd.read_csv(r'laender_lookup.csv', sep=';')
+# print(counties.head())
 
 def remove_umlaut(string):
     """ Removes umlauts from strings and replaces them with the letter+e convention """
@@ -83,17 +73,26 @@ def innerHTML(element):
 
 
 def get_additional_apartment_details(soup, url):
+    """ Get price data etc. """
+
     title = []
     value = []
+
+    """ get real estate price """
+    title.append('price')
     try:
-        price = innerHTML(soup.find('span', {
-            'class': 'Text-sc-10o2fdq-0 PriceInformationAttributesBox___StyledText-sc-1a44msw-0 dZQwG iuZZCU'})).decode(
-            "utf-8")
-        value.append(price)
+        price = innerHTML(soup.find('span', {'data-testid': 'contact-box-price-box-price-value-0'})).decode("utf-8")
+        pattern = re.compile(r'\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?')
+        try:
+            res = pattern.findall(price)[0]
+            value.append(float(res.replace('.', '')))
+            # print(f"{price} : {float(res.replace('.', ''))}")
+        except IndexError as e:
+            value.append(price)
     except:
         value.append(None)
 
-    title.append('price')
+
     title.append('scrape_date')
     now = datetime.now()
     value.append("{}.{}.{} {}:{}".format(now.day, now.month, now.year, now.hour, now.minute))
@@ -104,44 +103,72 @@ def get_additional_apartment_details(soup, url):
     elif url.find('mietwohnungen') > 0:
         value.append('Mietwohnung')
 
+    """ Retail agency """
     try:
         title.append('Makler')
         value.append(innerHTML(
             soup.find('span', {'data-testid': 'price-information-freetext-attribute-value-0'})).decode("utf-8"))
     except AttributeError as e :
         value.append(None)
-        pass
 
+    """ Zusatz """
     try:
         title.append('Zusatz')
         value.append(innerHTML(
             soup.find('span', {'data-testid': 'price-information-freetext-attribute-value-1'})).decode("utf-8"))
     except AttributeError as e:
         value.append(None)
-        pass
 
+    """ last change of the inserat """
     last_change = innerHTML(soup.find('span', {'data-testid': 'ad-detail-ad-edit-date-top'})).decode("utf-8")
     title.append('last_change_date')
-    value.append(re.findall(r'(\d{2}.\d{2}.\d{4})', last_change)[0])
+    try:
+        value.append(re.findall(r'(\d{2}.\d{2}.\d{4})', last_change)[0])
+    except IndexError as e:
+        value.appen(None)
 
+    """ title of the inserat """
     title.append('title')
     value.append(innerHTML(soup.find('h1', {'data-testid': 'ad-detail-header'})).decode("utf-8"))
 
+    """ code number"""
     willhaben_code = innerHTML(soup.find('span', {'data-testid': 'ad-detail-ad-wh-code-top'})).decode("utf-8")
     title.append('code')
-    value.append(re.findall(r'(\d{9})', willhaben_code)[0])
+    try:
+        value.append(re.findall(r'(\d{9})', willhaben_code)[0])
+    except IndexError as e:
+        value.append(None)
+
     title.append('Url')
     value.append(url)
 
+    """ location of the real estate """
     title.append('location')
-    value.append(innerHTML(soup.find('div', {'data-testid': 'object-location-address'})).decode("utf-8"))
+    location = innerHTML(soup.find('div', {'data-testid': 'object-location-address'})).decode("utf-8")
+    value.append(location)
+
+    """ area code of the real estate """
+    title.append('plz')
+    # https://stackoverflow.com/questions/16348538/python-regex-for-int-with-at-least-4-digits
+    pattern = re.compile(r"(?<!\d)\d{4,7}(?!\d)")
+
+    try:
+        plz = pattern.findall(location)[0]
+        # gkz = counties['count code']
+        # gkz = df.lookup(plz, counties['count code'])
+
+        value.append(plz)
+    except:
+        value.append(None)
+
 
     return [title, value]
 
 
 def get_apartment_details(url):
     """Get all the details of the appartment. """
-    response = requests.get(url, headers=headers)
+
+    response = requests.get(url, headers=headers, proxies=prox)
     soup = BeautifulSoup(response.text, 'html.parser')
     [title, value] = get_additional_apartment_details(soup, url)
     results = OrderedDict()
@@ -152,17 +179,21 @@ def get_apartment_details(url):
 
 def get_all_urls():
     """ Get all urls initially. Afterwards for each url the data is scraped."""
+
     apartment_links = []
     for land in bundesland:
         for wohnungs_typ in wohnung:
             final_page = False
-            for i in range(start_page,end_page):
+            for i in range(page_start, page_end):
+                # print(f"{land} : {wohnungs_typ} : {i}")
                 if final_page: break
-                sleep(0.5)
+                sleep(0.34)
                 url = (f'https://www.willhaben.at/iad/immobilien/{wohnungs_typ}/{land}?rows={rows_per_page}&page={i}')
-                response = requests.get(url, headers=headers)
+                print(url)
+                response = requests.get(url, headers=headers, proxies=prox, timeout=(3.05, 27))
+                # sleep(1)
                 soup = BeautifulSoup(response.text, 'html.parser')
-
+                # print(soup)
                 """Find the last page without retail links """
                 for span in soup.find_all('span', {'class': 'Text-sc-10o2fdq-0 iEMlgJ'}):
                     if innerHTML(span).decode("utf-8") == "Wir benachrichtigen dich bei <b>neuen Anzeigen</b> automatisch!":
@@ -176,7 +207,6 @@ def get_all_urls():
                     # print(url2)
                     if url2 != "#" and url2 != None and url2.startswith((f"/iad/immobilien/d/{wohnungs_typ}/{land}")):
                         apartment_links.append("https://www.willhaben.at" + url2)
-                        # print(f"2: {url2}")
 
     return apartment_links
 
