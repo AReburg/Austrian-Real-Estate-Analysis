@@ -46,7 +46,7 @@ def get_geo_data(selector, source='online'):
         else:
             with open("./data/gemeinden_999_geo.json") as a:
                 counties = json.load(a)
-    elif selector == 'bezirke':
+    elif selector == 'bezirk':
         if source == 'online':
             link = 'https://raw.githubusercontent.com/ginseng666/GeoJSON-TopoJSON-Austria/master/2021/simplified-99.9/bezirke_999_geo.json'
             with urlopen(link) as response:
@@ -83,13 +83,14 @@ def load_data():
     df_lookup['plz'] = df_lookup.plz.astype("int64")
     df_lookup['cc'] = df_lookup.cc.astype("int64")
     df_lookup_l['county'] = df_lookup_l.bundesland.astype("category")
+    df_lookup_l['bezirk'] = df_lookup_l.bezirk.astype("category")
     df_lookup_l['plz'] = df_lookup_l.plz.astype("int64")
     df['price'] = df['price'].fillna(0)#.astype('int', errors='ignore')
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
 
     # merge dataframem with lookup table
     df = df.merge(df_lookup[['plz','cc']], on=['plz'])
-    df = df.merge(df_lookup_l[['plz','county']], on=['plz'])
+    df = df.merge(df_lookup_l[['plz','county', 'bezirk']], on=['plz'])
     #df_new['cc'] = df_new['cc'].fillna(0).astype('int', errors='ignore')
     #df_new['cc'] = df_new['cc'].astype('str', errors='ignore')
     # df = df.groupby('cc', as_index=False)
@@ -108,6 +109,9 @@ def make_graph(df, geo_data, sel='gemeinden'):
     elif sel == 'laender':
         feat_key = "properties.name"
         locations = "county"
+    elif sel == 'bezirk':
+        feat_key = "properties.name"
+        locations = "bezirk"
     fig = px.choropleth_mapbox(df, geojson=geo_data, locations=locations,
                                featureidkey=feat_key, color="price",
                                #hover_name = 'plz',
@@ -136,11 +140,13 @@ def manipulate_data(df, sel='gemeinden'):
         df2 = df2.groupby(['cc'], as_index=False).agg({'price': 'mean', 'plz': 'first', 'county': 'first'})
     elif sel == 'laender':
         df2 = df2.groupby(['county'], as_index=False).agg({'price': 'mean', 'plz': 'first'})
+    elif sel == 'bezirk':
+        df2 = df2.groupby(['bezirk'], as_index=False).agg({'price': 'mean', 'county': 'first'})
     df2['price'] = df2['price'].round(0)
     return df2
 
 df = load_data()
-res = 'laender'
+res = 'bezirk'  # bezirk, laender
 df2 = manipulate_data(df, res)
-geo_data = get_geo_data(res, source='offline') # bezirke, laender
+geo_data = get_geo_data(res, source='offline')
 make_graph(df2, geo_data, res)
