@@ -8,7 +8,7 @@ easy to come by. In this notebook we investigate an Austrian real estate data se
 extracted over the course of one week from a large online portal. The data has already been 
 pre-processed and can be regional investigated.
 
-<img src="https://github.com/AReburg/Austrian-Real-Estate-Analysis/tree/main/img/property_price_district_level.png" width="800"/>
+<img src="https://github.com/AReburg/Austrian-Real-Estate-Analysis/blob/main/img/property_price_district_level.PNG" width="800"/>
 
 ### Results
 The main findings of the code can be fount at the post available [here]().
