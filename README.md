@@ -8,8 +8,8 @@ easy to come by. In this notebook we investigate an Austrian real estate data se
 extracted over the course of one week from a large online portal. The data has already been 
 pre-processed and can be regional investigated.
 
-<img src="https://github.com/AReburg/Austrian-Real-Estate-Analysis/blob/main/img/property_price_district_level.PNG" width="800"/>
+<img src="https://github.com/AReburg/Austrian-Real-Estate-Analysis/blob/main/img/property_price_district_level.PNG" width="500"/>
 
 ### Results
-The main findings of the code can be fount at the post available [here]().
+The main findings of the code can be found at the post available [here](https://medium.com/@arlin.gruber/how-data-science-can-give-you-an-edge-in-real-estate-investing-1849255d7c33).
 Feel free to contact me if you have any questions or suggestions.
