@@ -33,11 +33,11 @@ Real estate information of a particular region or location is not
 easy to come by. In this notebook we investigate an Austrian real estate data set which has been mined
 extracted over the course of a week from a large online portal. The data has already been 
 pre-processed and can be geospatial investigated.
+
+
 <figure>
-<p align="center">
 <img src="img/property_price_district_level.PNG" alt="Austrian apartment property prices" width="500">
-</p>
-<figcaption align = "center"><b>Rental apartment prices on district level</b></figcaption>
+<figcaption align = "left"><b>Rental apartment prices on district level</b></figcaption>
 </figure>
 
 
