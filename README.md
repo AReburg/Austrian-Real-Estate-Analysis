@@ -1,7 +1,4 @@
 <div align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="img/logo.png" alt="Logo" width="80" height="80">
-  </a>
   <h3 align="center">Austrian Housing Market Analysis</h3>
   <p align="center">
     A data-driven analysis using Austrian real estate online platform data
@@ -28,29 +25,67 @@
   </ol>
 </details>
 
-### About The Project
+
+### 1. About The Project
 Real estate information of a particular region or location is not 
 easy to come by. In this notebook we investigate an Austrian real estate data set which has been mined
 extracted over the course of a week from a large online portal. The data has already been 
 pre-processed and can be geospatial investigated.
 
-
-<figure>
-<img src="img/property_price_district_level.PNG" alt="Austrian apartment property prices" width="500">
-<figcaption align = "left"><b>Rental apartment prices on district level</b></figcaption>
-</figure>
+This app can be viewed live on Heroku at [https://austrian-housing.herokuapp.com/](https://austrian-housing.herokuapp.com/)
 
 
-### Getting Started
-#### Installation
-No additional libraries beyond the Anaconda distribution of Python are necessary. The code should 
-run with no issues using Python version 3.8
+<img src="img/dash-app-screenshot.png" alt="Rental prices Austria" width="550"/>
 
-#### View Notebook
+### 2. File Structure
+
+`app.py` main dash app <br>
+`requirements.txt` python modules that will be installed for the web application at build. <br>
+`/assets` this directory is to serve the CSS files and images for the app. `charts.py` is used for generating the figures. <br>
+`layout.py` defines the html web layout, `callbacks.py` handles all the callbacks and `data_wrangling.py` is used
+for all the data queries and date manipulation. <br>
+`/data` contains the raw data files.<br>
+`/data/geojson/vienna.geojson` geojson files with the geospatial data of Austria.<br>
+`/nb` notebook used for data exploration and analysis. <br>
+`runtime.txt` tells (the Gunicorn HTTP server) which python version to use (only needed for Heroku deployment)<br>
+`Procfile` defines what type of process is going to run (Gunicorn web process) and the Python app entrypoint
+(only needed for a deployment on Heroku) <br>
+`.gitignore`<br>
+
+### 3. Installation
+
+#### Getting Started
+
+- Change the current directory to the location where you want to clone the repository and run:
+
+`$ git clone https://github.com/AReburg/Austrian-Real-Estate-Analysis.git`
+- Make sure that the app is running on the local webserver before deployment.
+Setup your virtualenv (or don't) and ensure you have all the modules installed before running the app. 
+
+
+#### Requirements
+Install the modules from the `requirements.txt` with pip3 or conda from a terminal in the project root folder:
+
+`pip install -r requirements.txt` <br>
+`conda install --file requirements.txt` (Anaconda)
+<br>
+
+
+#### Jupyter Notebook
+Executing the notebook is tested on *anaconda distribution 6.4.12.*  with 
+*python 3.9.13*.
 To view the rendered geospatial charts of the Jupyter notebook go to [nbviewer](https://nbviewer.org/) and
 copy the link.
 
+### 4. Usage
 
-### Results
-The main findings of the code can be found at the post available [here](https://medium.com/@arlin.gruber/how-data-science-can-give-you-an-edge-in-real-estate-investing-1849255d7c33).
+#### Local Web Application
+- Run the app from your IDE direct, or from the terminal in the projects root directory: `python app.py`
+
+- It should be accessible on the browser `http://127.0.0.1:8050/`
+
+
+### 5. Results
+The main findings are summarized in a [post](https://medium.com/@arlin.gruber/how-data-science-can-give-you-an-edge-in-real-estate-investing-1849255d7c33).
 Feel free to contact me if you have any questions or suggestions.
+
