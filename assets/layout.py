@@ -27,17 +27,16 @@ def layout(app, df):
                 <a href="https://github.com/AReburg/", target="_blank">jupyter notebook</a>.
                 <br/><br/>""")),
             html.Div([dcc.Dropdown(
-                ["rented flat", "single family home", 'condo'],
-                placeholder="Select geospatial resolution", id='property_type', value="rented flat",
+                ["Rented flat", "Single family home", 'Condo'],
+                placeholder="Select property type", id='property_type', value="Rented flat",
             )], className='Select-value'),
-
-            html.P("Select geospatial resolution:"),
+            html.Br(),
             html.Div([dcc.Dropdown(
-                ["municipal", "district", 'state'],
-                placeholder="Select geospatial resolution", id='resolution', value="district",
+                ["Municipal", "District", 'State'],
+                placeholder="Select geospatial resolution", id='resolution', value="District",
             )], className='Select-value'),
-            html.P(""),
-            html.P(""),
+            html.Br(),
+            html.Br(),
             ], className='four columns div-user-controls'),
 
         # right half of the web page

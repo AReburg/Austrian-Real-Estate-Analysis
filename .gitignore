@@ -1,4 +1,5 @@
 .idea
+/nb/cache/
 venv 
 *.pyc 
 .DS_Store 

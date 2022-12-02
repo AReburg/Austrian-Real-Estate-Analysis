@@ -50,7 +50,7 @@ class GeoData():
 
     def get_geo_data(self, selector, source='online'):
         """ Load Austrian geojson"""
-        if selector == 'municipal':
+        if selector == 'Municipal':
             if source == 'online':
                 link = 'https://raw.githubusercontent.com/ginseng666/GeoJSON-TopoJSON-Austria/master/2021/simplified-99.5/gemeinden_995_geo.json'
                 with urlopen(link, encoding='utf8') as response:
@@ -58,7 +58,7 @@ class GeoData():
             else:
                 with open(os.path.join(Path(cwd), 'data', 'geojson', 'gemeinden_999_geo.json'), encoding='utf8') as a:
                     counties = json.load(a)
-        elif selector == 'district':
+        elif selector == 'District':
             if source == 'online':
                 link = 'https://raw.githubusercontent.com/ginseng666/GeoJSON-TopoJSON-Austria/master/2021/simplified-99.9/bezirke_999_geo.json'
                 with urlopen(link, encoding='utf8') as response:
@@ -66,7 +66,7 @@ class GeoData():
             else:
                 with open(os.path.join(Path(cwd), 'data', 'geojson', 'bezirke_999_geo.json'), encoding='utf8') as a:
                     counties = json.load(a)
-        elif selector == 'state':
+        elif selector == 'State':
             if source == 'online':
                 link = 'https://raw.githubusercontent.com/ginseng666/GeoJSON-TopoJSON-Austria/master/2021/simplified-99.9/laender_999_geo.json'
                 with urlopen(link, encoding='utf8') as response:

@@ -29,29 +29,29 @@ def register_callbacks(app, dfx):
         hover_data = ''
         opacity = 0.55
 
-        if property_type == 'rented flat':
-            dfj = dfi[(dfi['type'].str.contains('rented flat', na = False)) & (dfi['rooms'] < 6)].copy()
-        elif property_type == 'condo':
-            dfj = dfi[(dfi['type'].str.contains('condominium', na = False))].copy()
-        elif property_type == 'single family home':
-            dfj = dfi[(dfi['type'].str.contains('single-family home', na = False))].copy()
+        if property_type == 'Rented flat':
+            dfj = dfi[(dfi['type'].str.contains('rented flat', na =False)) & (dfi['rooms'] < 6)].copy()
+        elif property_type == 'Condo':
+            dfj = dfi[(dfi['type'].str.contains('condominium', na=False))].copy()
+        elif property_type == 'Single family home':
+            dfj = dfi[(dfi['type'].str.contains('single-family home', na=False))].copy()
 
 
-        if resolution == 'municipal':
+        if resolution == 'Municipal':
             feat_key = "properties.iso"
             locations = "GKZ"
             hover_data = ["GKZ", "Bezirk", "Bundesland", "count"]
             hover_name = "GKZ"
             text = {'price': 'mean', 'price_sqrt': 'mean', 'Bezirk': 'first', 'Bundesland': 'first', 'count': 'size'}
 
-        elif resolution == 'district':
+        elif resolution == 'District':
             feat_key = "properties.name"
             locations = "Bezirk"
             hover_data = ["Bundesland", "Bezirk", "count"]
             hover_name = "Bezirk"
             text = {'price': 'mean', 'price_sqrt': 'mean', 'Bundesland': 'first', 'count': 'size'}
 
-        elif resolution == 'state':
+        elif resolution == 'State':
             feat_key = "properties.name"
             locations = "Bundesland"
             hover_data = ["Bundesland", "count"]
